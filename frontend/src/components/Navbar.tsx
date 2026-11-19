@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  ShoppingCart, Search, MapPin, User, ShieldAlert, Activity,
-  Menu, X, Heart, HelpCircle, LayoutDashboard, ChevronDown, Sparkles
+  ShoppingCart, Search, MapPin, 
+  Menu, ChevronDown, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -66,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
           </div>
           <div className="flex flex-col leading-none">
             <span className="font-bold text-lg tracking-tight text-white group-hover:text-amber-400 transition-colors">mart</span>
-            <span className="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Enterprise</span>
+            <span className="text-[10px] text-amber-400 font-bold tracking-wider">.in</span>
           </div>
         </div>
 
@@ -141,33 +141,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
           )}
         </div>
 
-        {/* Actions & Tools */}
+        {/* Customer Actions */}
         <div className="flex items-center gap-3">
-          {/* Chaos Fault Simulator */}
-          <button
-            onClick={() => onNavigate('chaos')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold border transition-all ${currentPage === 'chaos'
-              ? 'bg-red-950 border-red-500 text-red-300'
-              : 'bg-red-500/10 border-red-500/40 text-red-400 hover:bg-red-500/20'
-              }`}
-            title="Open Fault Injection Studio"
+          {/* Returns & Orders */}
+          <div
+            onClick={() => onNavigate('orders')}
+            className="hidden sm:flex flex-col text-left px-2 py-1 rounded hover:outline outline-1 outline-white cursor-pointer"
           >
-            <ShieldAlert className="w-4 h-4 text-red-400" />
-            <span className="hidden lg:inline">Chaos Studio</span>
-          </button>
-
-          {/* Admin Dashboard */}
-          <button
-            onClick={() => onNavigate('admin')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold border transition-all ${currentPage === 'admin'
-              ? 'bg-purple-950 border-purple-500 text-purple-300'
-              : 'bg-purple-500/10 border-purple-500/40 text-purple-400 hover:bg-purple-500/20'
-              }`}
-            title="Open Enterprise Admin Dashboard"
-          >
-            <LayoutDashboard className="w-4 h-4 text-purple-400" />
-            <span className="hidden lg:inline">Admin</span>
-          </button>
+            <span className="text-gray-400 text-xs leading-none">Returns</span>
+            <span className="font-bold text-xs text-gray-100">& Orders</span>
+          </div>
 
           {/* User Account Menu */}
           <div className="relative">
@@ -191,35 +174,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                 <div className="px-4 py-2 border-b border-gray-100">
                   <p className="text-xs text-gray-500">Signed in as</p>
                   <p className="font-bold text-sm truncate">{user?.email || 'Guest'}</p>
-                  <span className="inline-block mt-1 text-[10px] font-mono px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold uppercase">
-                    Role: {user?.role || 'customer'}
-                  </span>
                 </div>
                 <div className="py-1">
                   <button
                     onClick={() => { onNavigate('orders'); setUserDropdownOpen(false); }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
                   >
-                    My Orders & Tracking
-                  </button>
-                  <button
-                    onClick={() => { onNavigate('support'); setUserDropdownOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    Customer Support Tickets
-                  </button>
-                  <button
-                    onClick={() => { onNavigate('admin'); setUserDropdownOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    <LayoutDashboard className="w-4 h-4 text-purple-600" />
-                    Admin Enterprise Portal
+                    Your Orders
                   </button>
                   <button
                     onClick={() => { onNavigate('profile'); setUserDropdownOpen(false); }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
                   >
-                    Customer Profile & Addresses
+                    Your Account & Addresses
+                  </button>
+                  <button
+                    onClick={() => { onNavigate('support'); setUserDropdownOpen(false); }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    Customer Service & Help
                   </button>
                 </div>
                 {user && (
