@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ShoppingCart, Search, MapPin, 
-  Menu, ChevronDown, Sparkles
+  Menu, ChevronDown, Sparkles, User, LogIn
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -13,7 +13,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, openAuthModal } = useAuth();
   const { cart } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -53,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 shadow-md">
+    <header className="sticky top-0 z-40 shadow-md">
       {/* Top Bar */}
       <div className="bg-amazon-dark text-white px-4 py-2.5 flex items-center justify-between gap-4">
         {/* Logo */}
@@ -155,11 +155,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
           {/* User Account Menu */}
           <div className="relative">
             <button
-              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+              onClick={() => {
+                if (!user) {
+                  openAuthModal('signin');
+                } else {
+                  setUserDropdownOpen(!userDropdownOpen);
+                }
+              }}
               className="flex items-center gap-1 text-left px-2 py-1 rounded hover:outline outline-1 outline-white cursor-pointer"
             >
               <div className="text-xs">
-                <p className="text-gray-400 leading-none">Hello, {user ? user.full_name.split(' ')[0] : 'Sign In'}</p>
+                <p className="text-gray-400 leading-none">
+                  Hello, {user ? user.full_name.split(' ')[0] : 'Sign In'}
+                </p>
                 <p className="font-bold text-gray-100 flex items-center gap-0.5">
                   Account & Lists <ChevronDown className="w-3 h-3 text-gray-400" />
                 </p>
@@ -168,41 +176,70 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
 
             {userDropdownOpen && (
               <div
-                className="absolute right-0 top-full mt-2 w-56 bg-white text-gray-900 rounded-md shadow-2xl border border-gray-200 py-2 z-50"
+                className="absolute right-0 top-full mt-2 w-64 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-200 py-3 z-50"
                 onMouseLeave={() => setUserDropdownOpen(false)}
               >
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-xs text-gray-500">Signed in as</p>
-                  <p className="font-bold text-sm truncate">{user?.email || 'Guest'}</p>
-                </div>
-                <div className="py-1">
-                  <button
-                    onClick={() => { onNavigate('orders'); setUserDropdownOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    Your Orders
-                  </button>
-                  <button
-                    onClick={() => { onNavigate('profile'); setUserDropdownOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    Your Account & Addresses
-                  </button>
-                  <button
-                    onClick={() => { onNavigate('support'); setUserDropdownOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    Customer Service & Help
-                  </button>
-                </div>
-                {user && (
-                  <div className="border-t border-gray-100 pt-1">
+                {user ? (
+                  <>
+                    <div className="px-4 pb-3 border-b border-gray-100">
+                      <p className="text-[11px] text-gray-500 font-medium">Signed in as</p>
+                      <p className="font-bold text-sm text-gray-900 truncate">{user.full_name}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+
+                    <div className="py-2 text-xs">
+                      <button
+                        onClick={() => { onNavigate('orders'); setUserDropdownOpen(false); }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 font-medium"
+                      >
+                        Your Orders & Tracking
+                      </button>
+                      <button
+                        onClick={() => { onNavigate('profile'); setUserDropdownOpen(false); }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 font-medium"
+                      >
+                        Your Account & Addresses
+                      </button>
+                      <button
+                        onClick={() => { onNavigate('support'); setUserDropdownOpen(false); }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 font-medium"
+                      >
+                        Customer Service & Help
+                      </button>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-2 px-2">
+                      <button
+                        onClick={() => { openAuthModal('signin'); setUserDropdownOpen(false); }}
+                        className="w-full text-left px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded font-medium"
+                      >
+                        Switch Account / Sign In
+                      </button>
+                      <button
+                        onClick={() => { logout(); setUserDropdownOpen(false); }}
+                        className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded font-bold"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-4 text-center space-y-3">
                     <button
-                      onClick={() => { logout(); setUserDropdownOpen(false); }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      onClick={() => { openAuthModal('signin'); setUserDropdownOpen(false); }}
+                      className="w-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold py-2 rounded-lg text-xs shadow-sm transition-colors"
                     >
-                      Sign Out
+                      Sign In
                     </button>
+                    <p className="text-xs text-gray-500">
+                      New customer?{' '}
+                      <button
+                        onClick={() => { openAuthModal('signup'); setUserDropdownOpen(false); }}
+                        className="text-blue-600 font-bold hover:underline"
+                      >
+                        Start here.
+                      </button>
+                    </p>
                   </div>
                 )}
               </div>

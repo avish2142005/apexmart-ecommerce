@@ -6,6 +6,10 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  isAuthModalOpen: boolean;
+  authModalMode: 'signin' | 'signup';
+  openAuthModal: (mode?: 'signin' | 'signup') => void;
+  closeAuthModal: () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => void;
@@ -18,6 +22,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+
+  const openAuthModal = (mode: 'signin' | 'signup' = 'signin') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -33,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
       } else {
-        // Set default demo user for frictionless immediate exploration
+        // Set default authenticated user for frictionless preview
         setUser({
           id: 2,
           email: "john.doe@example.com",
@@ -81,7 +96,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      loading, 
+      isAuthModalOpen, 
+      authModalMode, 
+      openAuthModal, 
+      closeAuthModal, 
+      login, 
+      register, 
+      logout, 
+      updateProfile 
+    }}>
       {children}
     </AuthContext.Provider>
   );

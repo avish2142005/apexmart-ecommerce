@@ -10,12 +10,15 @@ class UserModel(Base):
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
     role = Column(String(50), default="customer") # customer, admin, support_agent
-    phone = Column(String(50), nullable=True)
+    phone = Column(String(50), index=True, nullable=True)
     address_street = Column(String(255), nullable=True)
     address_city = Column(String(100), nullable=True)
     address_state = Column(String(100), nullable=True)
     address_zip = Column(String(20), nullable=True)
     address_country = Column(String(100), default="India")
+    is_active = Column(Boolean, default=True)
+    failed_login_attempts = Column(Integer, default=0)
+    last_login = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class ProductModel(Base):
