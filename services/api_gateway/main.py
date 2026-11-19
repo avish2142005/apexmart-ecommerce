@@ -310,7 +310,17 @@ if UNIFIED_MODE:
         logger.info("Gateway initialized in UNIFIED MICROSERVICES mode (Direct fast routing).")
     except Exception as e:
         logger.warning(f"Could not mount unified apps directly ({e}). Falling back to HTTP proxy mode.")
+        app.state.mount_error = str(e)
         UNIFIED_MODE = False
+
+@app.get("/api/v1/health")
+def api_v1_health():
+    return {
+        "status": "UP",
+        "service": "api-gateway",
+        "unified_mode": UNIFIED_MODE,
+        "mount_error": getattr(app.state, "mount_error", None)
+    }
 
 # Reverse proxy fallback for Dockerized or multi-process mode
 if not UNIFIED_MODE:
