@@ -1,0 +1,383 @@
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------
+  # CORE INFRASTRUCTURE (Databases, Broker, Monitoring)
+  # -------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_USER: ecommerce_user
+      POSTGRES_PASSWORD: ecommerce_password
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce_user -d ecommerce_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce-net
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: ecommerce-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ecommerce-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ecommerce-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ecommerce-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ecommerce-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - ecommerce-net
+
+  # -------------------------------------------------------------
+  # UNIFIED API GATEWAY & TELEMETRY HUB
+  # -------------------------------------------------------------
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-api-gateway
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+      - UNIFIED_MODE=true
+      - GATEWAY_PORT=8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - ecommerce-net
+
+  # -------------------------------------------------------------
+  # INDEPENDENT MICROSERVICES (Can also run individually)
+  # -------------------------------------------------------------
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-auth-service
+    command: uvicorn services.auth_service.main:app --host 0.0.0.0 --port 8001
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - AUTH_SERVICE_PORT=8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - ecommerce-net
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-catalog-service
+    command: uvicorn services.catalog_service.main:app --host 0.0.0.0 --port 8002
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - CATALOG_SERVICE_PORT=8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  search-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-search-service
+    command: uvicorn services.search_service.main:app --host 0.0.0.0 --port 8003
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - SEARCH_SERVICE_PORT=8003
+    ports:
+      - "8003:8003"
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-inventory-service
+    command: uvicorn services.inventory_service.main:app --host 0.0.0.0 --port 8004
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - INVENTORY_SERVICE_PORT=8004
+    ports:
+      - "8004:8004"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - ecommerce-net
+
+  cart-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-cart-service
+    command: uvicorn services.cart_service.main:app --host 0.0.0.0 --port 8005
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - REDIS_HOST=redis
+      - CART_SERVICE_PORT=8005
+    ports:
+      - "8005:8005"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ecommerce-net
+
+  pricing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-pricing-service
+    command: uvicorn services.pricing_service.main:app --host 0.0.0.0 --port 8006
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - PRICING_SERVICE_PORT=8006
+    ports:
+      - "8006:8006"
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  checkout-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-checkout-service
+    command: uvicorn services.checkout_service.main:app --host 0.0.0.0 --port 8007
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - CHECKOUT_SERVICE_PORT=8007
+    ports:
+      - "8007:8007"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - ecommerce-net
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-payment-service
+    command: uvicorn services.payment_service.main:app --host 0.0.0.0 --port 8008
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - PAYMENT_SERVICE_PORT=8008
+    ports:
+      - "8008:8008"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - ecommerce-net
+
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-order-service
+    command: uvicorn services.order_service.main:app --host 0.0.0.0 --port 8009
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - ORDER_SERVICE_PORT=8009
+    ports:
+      - "8009:8009"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - ecommerce-net
+
+  shipping-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-shipping-service
+    command: uvicorn services.shipping_service.main:app --host 0.0.0.0 --port 8010
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - SHIPPING_SERVICE_PORT=8010
+    ports:
+      - "8010:8010"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - ecommerce-net
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-notification-service
+    command: uvicorn services.notification_service.main:app --host 0.0.0.0 --port 8011
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - RABBITMQ_HOST=rabbitmq
+      - NOTIFICATION_SERVICE_PORT=8011
+    ports:
+      - "8011:8011"
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - ecommerce-net
+
+  support-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-support-service
+    command: uvicorn services.support_service.main:app --host 0.0.0.0 --port 8012
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - SUPPORT_SERVICE_PORT=8012
+    ports:
+      - "8012:8012"
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  review-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-review-service
+    command: uvicorn services.review_service.main:app --host 0.0.0.0 --port 8013
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - REVIEW_SERVICE_PORT=8013
+    ports:
+      - "8013:8013"
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-analytics-service
+    command: uvicorn services.analytics_service.main:app --host 0.0.0.0 --port 8014
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - ANALYTICS_SERVICE_PORT=8014
+    ports:
+      - "8014:8014"
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ecommerce-admin-service
+    command: uvicorn services.admin_service.main:app --host 0.0.0.0 --port 8015
+    environment:
+      - DATABASE_URL=postgresql://ecommerce_user:ecommerce_password@postgres:5432/ecommerce_db
+      - ADMIN_SERVICE_PORT=8015
+    ports:
+      - "8015:8015"
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  # -------------------------------------------------------------
+  # FRONTEND UI
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ecommerce-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - ecommerce-net
+
+networks:
+  ecommerce-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

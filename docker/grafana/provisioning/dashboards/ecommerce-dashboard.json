@@ -1,0 +1,76 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Microservices Request Volume (Req/s)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(ecommerce_service_requests_total[1m])",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Average Response Latency (ms)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "ecommerce_service_latency_ms",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "Failed Requests (Status >= 400)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(ecommerce_service_failures_total[1m])",
+          "legendFormat": "{{service}} failures",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "title": "Host System CPU Utilization (%)",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "system_cpu_utilization",
+          "legendFormat": "CPU %",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["ecommerce", "observability", "microservices"],
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "ApexMart E-Commerce Observability & Telemetry",
+  "uid": "apexmart-observability"
+}

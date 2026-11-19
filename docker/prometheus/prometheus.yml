@@ -1,0 +1,84 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "ecommerce-api-gateway"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["api-gateway:8000"]
+
+  - job_name: "auth-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["auth-service:8001"]
+
+  - job_name: "catalog-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["catalog-service:8002"]
+
+  - job_name: "search-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["search-service:8003"]
+
+  - job_name: "inventory-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["inventory-service:8004"]
+
+  - job_name: "cart-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["cart-service:8005"]
+
+  - job_name: "pricing-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["pricing-service:8006"]
+
+  - job_name: "checkout-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["checkout-service:8007"]
+
+  - job_name: "payment-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["payment-service:8008"]
+
+  - job_name: "order-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["order-service:8009"]
+
+  - job_name: "shipping-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["shipping-service:8010"]
+
+  - job_name: "notification-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["notification-service:8011"]
+
+  - job_name: "support-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["support-service:8012"]
+
+  - job_name: "review-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["review-service:8013"]
+
+  - job_name: "analytics-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["analytics-service:8014"]
+
+  - job_name: "admin-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["admin-service:8015"]
